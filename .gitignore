@@ -47,6 +47,7 @@ smart-delivery-bot-second/core
 smart-delivery-stand/core
 
 # DS_Store (macOS)
+.DS_Store
 smart-delivery-bot-first/.DS_Store
 
 smart-delivery-bot-second/.DS_Store
