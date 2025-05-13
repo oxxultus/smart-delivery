@@ -1,0 +1,89 @@
+# PlatformIO build system
+smart-delivery-bot-first/.pio/
+smart-delivery-bot-first/.pioenvs/
+smart-delivery-bot-first/.build/
+smart-delivery-bot-first/*.elf
+smart-delivery-bot-first/*.bin
+smart-delivery-bot-first/*.hex
+smart-delivery-bot-first/*.map
+
+smart-delivery-bot-second/.pio/
+smart-delivery-bot-second/.pioenvs/
+smart-delivery-bot-second/.build/
+smart-delivery-bot-second/*.elf
+smart-delivery-bot-second/*.bin
+smart-delivery-bot-second/*.hex
+smart-delivery-bot-second/*.map
+
+smart-delivery-stand/.pio/
+smart-delivery-stand/.pioenvs/
+smart-delivery-stand/.build/
+smart-delivery-stand/*.elf
+smart-delivery-stand/*.bin
+smart-delivery-stand/*.hex
+smart-delivery-stand/*.map
+
+# Compiled object files
+smart-delivery-bot-first/*.o
+smart-delivery-bot-first/*.obj
+smart-delivery-bot-first/*.a
+smart-delivery-bot-first/*.lib
+
+smart-delivery-bot-second/*.o
+smart-delivery-bot-second/*.obj
+smart-delivery-bot-second/*.a
+smart-delivery-bot-second/*.lib
+
+smart-delivery-stand/*.o
+smart-delivery-stand/*.obj
+smart-delivery-stand/*.a
+smart-delivery-stand/*.lib
+
+# Core dumps
+smart-delivery-bot-first/core
+
+smart-delivery-bot-second/core
+
+smart-delivery-stand/core
+
+# DS_Store (macOS)
+smart-delivery-bot-first/.DS_Store
+
+smart-delivery-bot-second/.DS_Store
+
+smart-delivery-stand/.DS_Store
+
+# VSCode / JetBrains IDE settings
+smart-delivery-bot-first/.vscode/
+smart-delivery-bot-first/.idea/
+
+smart-delivery-bot-second/.vscode/
+smart-delivery-bot-second/.idea/
+
+smart-delivery-stand/.vscode/
+smart-delivery-stand/.idea/
+
+
+# Python bytecode (if you use scripts)
+smart-delivery-bot-first/__pycache__/
+Smart-delivery-bot-first/*.pyc
+
+smart-delivery-bot-second/__pycache__/
+smart-delivery-bot-second/*.pyc
+
+smart-delivery-stand/__pycache__/
+smart-delivery-stand/*.pyc
+
+# Library storage (optional)
+Smart-delivery-bot-first/.pylibs/
+
+smart-delivery-bot-second/.pylibs/
+
+smart-delivery-stand/.pylibs/
+
+#CLion IDE
+Smart-delivery-bot-first/.idea/
+
+smart-delivery-bot-second/.idea/
+
+smart-delivery-stand/.idea/
