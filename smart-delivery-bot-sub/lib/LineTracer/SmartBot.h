@@ -1,29 +1,38 @@
-#ifndef SMART_BOT_H
-#define SMART_BOT_H
+#ifndef SMARTBOT_H
+#define SMARTBOT_H
 
+#include <Arduino.h>
 #include <AFMotor.h>
 
+/**
+ * @class SmartBot
+ * @brief 라인트레이싱 기반의 스마트 주행 로봇 제어 클래스
+ *
+ * - 모터 2개 (AFMotor)
+ * - 라인 센서 2개
+ * - 주행 상태 isRunning 추적
+ * - pause/resume/toggle 기능 지원
+ */
 class SmartBot {
 private:
-    AF_DCMotor motor_L;
-    AF_DCMotor motor_R;
-    int sensor_L_pin;
-    int sensor_R_pin;
-    bool isPaused;
+    AF_DCMotor motorL;
+    AF_DCMotor motorR;
+    uint8_t sensorL;
+    uint8_t sensorR;
+    bool isRunning = false;  ///< 현재 주행 상태
 
 public:
-    SmartBot(uint8_t motorL_num, uint8_t motorR_num, int leftSensorPin, int rightSensorPin);
+    SmartBot(uint8_t m1, uint8_t m2, uint8_t sL, uint8_t sR);
 
-    void begin();
-    void update();
+    void begin();       //< 모터 및 센서 초기화
+    void update();      //< 주행 로직 실행
+    void pause();       //< 정지 상태로 전환
+    void resume();      //< 주행 시작
+    void toggle();      //< 주행 상태 반전
+    bool running() const; //< 현재 주행 상태 반환
 
-    void forward();
-    void turnLeft();
-    void turnRight();
-    void stop();
-
-    void pause();
-    void resume();
+private:
+    void stopMotors();  ///< 모터 정지
 };
 
-#endif // SMART_BOT_H
+#endif
