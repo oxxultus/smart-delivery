@@ -36,8 +36,9 @@ constexpr const char* ADMIN_UID = "a1b2c3d4";
 // └─────────────────────────────────────────────┘
 
 // CommLink용 소프트웨어 시리얼 핀 (GND to GND)
-#define COMM_RX_PIN D8  // CommLink 수신 핀 (RX)
-#define COMM_TX_PIN D0  // CommLink 송신 핀 (TX)
+#define COMM_RX_PIN D8  // CommLink 수신 핀 (RX) = 우노보드 TX (예: 9)
+#define COMM_TX_PIN D0  // CommLink 송신 핀 (TX) = 우노보드 RX (예: 8)
+
 
 // HX711 무게 센서 핀 (3.3V / GND)
 #define HX_DOUT D1

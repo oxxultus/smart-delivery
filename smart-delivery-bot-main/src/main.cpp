@@ -36,6 +36,8 @@ void setup() {
     fetchPaymentDataUntilSuccess(); // 2. 외부 서버로 GET 요청 전송, 결제 내역을 받아온다.
     setServerHandler();             // 3. 내장 서버 API 핸들러 메서드 등록
     serverService.begin();          // 4. 내장 서버 구동 설정
+
+    Serial.println("[DELIVERY BOT] 메인 모듈 준비 완료");
 }
 
 void loop() {

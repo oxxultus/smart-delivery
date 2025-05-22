@@ -6,16 +6,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// WiFi 정보
-#define WIFI_SSID     "YourSSID"
-#define WIFI_PASSWORD "YourPassword"
 
-// 서버 IP 및 포트
-#define SERVER_IP   "192.168.0.100"
-#define SERVER_PORT 8080
+// CommLink용 소프트웨어 시리얼 핀 (GND to GND)
+#define COMM_RX_PIN 8  // CommLink 수신 핀 (RX) = 우노보드 TX (예: 9)
+#define COMM_TX_PIN 9  // CommLink 송신 핀 (TX) = 우노보드 RX (예: 8)
 
-// 요청 기본 경로
-#define GET_PATH "/command"
-#define POST_PATH "/receive"
+#define BAUD_RATE 9600
+
 
 #endif

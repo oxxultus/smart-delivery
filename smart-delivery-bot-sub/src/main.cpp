@@ -1,33 +1,43 @@
 #include "CommLink.h"
+#include "SmartBot.h"
+#include "Config.h"
 
-CommLink comm(2, 3);
+#define BAUD_RATE 9600
+
+// 📌 인스턴스 선언
+CommLink comm(COMM_RX_PIN, COMM_TX_PIN);
+SmartBot bot(1, 2, A0, A1);  // 모터 포트: 1,2 / 센서: A0, A1
 
 void setup() {
-    Serial.begin(9600);
-    comm.begin(9600);
-    Serial.println("수신기 시작");
+    Serial.begin(9600);     // 디버깅용 시리얼
+    comm.begin(BAUD_RATE);  // 통신 초기화
+    bot.begin();            // 모터 및 센서 초기화
+
+    Serial.println("[DELIVERY BOT] 보조 모듈 준비 완료");
 }
 
 void loop() {
+    comm.waitAndAck();  // 명령 수신 및 ACK 응답
+
+    // 명령 파싱
     if (comm.hasLine()) {
-        String msg = comm.receiveLine();
-        msg.trim();
-        Serial.print("수신된 명령: ");
-        Serial.println(msg);
+        String command = comm.receiveLine();
+        command.trim();
 
-        comm.sendAck();  // ACK 응답
+        Serial.print("명령 수신: ");
+        Serial.println(command);
 
-        // 명령어 분기 처리
-        if (msg == "/작동") {
-            Serial.println("작동 시작!");
-            // 여기에 작동 관련 로직 실행
-            // 예: 모터 시작, LED 켜기 등
-        } else if (msg == "/정지") {
-            Serial.println("정지 명령 수신됨");
-            // 여기에 정지 관련 로직 실행
-            // 예: 모터 정지, LED 끄기 등
+        if (command == "START") {
+            bot.resume();
+        } else if (command == "STOP") {
+            bot.pause();
+        } else if (command == "TOGGLE") {
+            bot.toggle();
         } else {
-            Serial.println("알 수 없는 명령어");
+            Serial.println("⚠️ 알 수 없는 명령");
         }
     }
+
+    // 주행 업데이트
+    bot.update();
 }
