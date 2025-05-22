@@ -52,7 +52,7 @@ void handleCommand() {
         } else if (command == "TOGGLE") {
             bot.toggle();
         } else {
-            Serial.println("⚠️ 알 수 없는 명령");
+            Serial.println("알 수 없는 명령");
         }
     }
 }
