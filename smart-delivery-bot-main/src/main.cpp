@@ -17,7 +17,7 @@ void modulsSetting();                   // 일반 모듈을 초기 설정 하는
 void checkDetectedUid();                // RFID - UID를 확인 후 결제 내역 체크 하는 함수 입니다.
 bool isWeightChanged();                 // 이전 무게와 현재 무게의 차이를 비교 판단 하는 함수 입니다.
 
-// 객체 생성 ==============================================================================================================
+// 객체 생성 =============================================================================================================
 WiFiConnector wifi(WIFI_SSID, WIFI_PASSWORD);                 // WiFiConnect 객체 생성
 ServerService serverService(INNER_SERVER_PORT);                    // WebService 객체 생성
 RFIDController rfidController(RC_SDA, RC_RST);                  // RFID 리더기 설정 (SDA, RST)
@@ -26,7 +26,7 @@ CommLink comm(COMM_RX_PIN, COMM_TX_PIN);                        // RX/TX 핀은 
 
 PaymentData payment;                                                        // 결제 내역
 
-// 프로그램 초기 설정 ======================================================================================================
+// 프로그램 설정 ==========================================================================================================
 void setup() {
     // 일반 모듈 초기 설정
     modulsSetting();
@@ -37,7 +37,7 @@ void setup() {
     setServerHandler();             // 3. 내장 서버 API 핸들러 메서드 등록
     serverService.begin();          // 4. 내장 서버 구동 설정
 
-    Serial.println("[DELIVERY BOT] 메인 모듈 준비 완료");
+    Serial.println("[DELIVERY BOT - MAIN] 메인 모듈 준비 완료");
 }
 
 void loop() {
