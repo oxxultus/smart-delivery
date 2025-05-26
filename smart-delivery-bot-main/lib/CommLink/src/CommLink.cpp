@@ -1,55 +1,45 @@
 #include "CommLink.h"
 
 #if defined(ESP32)
-
-// ESP32용: HardwareSerial을 외부에서 주입하며 핀도 설정
-CommLink::CommLink(HardwareSerial& hw, int rx, int tx)
-    : hwSerial(&hw), rxPin(rx), txPin(tx) {
-    // 핀 설정 및 스트림 지정은 begin()에서 처리
-}
+CommLink::CommLink(HardwareSerial& hwSerial, int rx, int tx)
+    : serial(&hwSerial), rxPin(rx), txPin(tx) {}
 
 void CommLink::begin(long baudRate) {
-    if (hwSerial && rxPin >= 0 && txPin >= 0) {
-        hwSerial->begin(baudRate, SERIAL_8N1, rxPin, txPin);
-        stream = hwSerial;
-    }
+    serial->begin(baudRate, SERIAL_8N1, rxPin, txPin);
 }
-
 #else
-
-// AVR용: 내부 SoftwareSerial 객체 생성
-CommLink::CommLink(uint8_t rxPin, uint8_t txPin) {
-    swSerial = new SoftwareSerial(rxPin, txPin);
-    stream = swSerial;
+CommLink::CommLink(uint8_t rx, uint8_t tx) {
+    serial = new SoftwareSerial(rx, tx);
 }
 
 void CommLink::begin(long baudRate) {
-    if (swSerial) swSerial->begin(baudRate);
+    serial->begin(baudRate);
 }
-
 #endif
 
+// ✅ println() 사용으로 단일 메시지 전송 보장
 void CommLink::sendLine(const String& text) {
-    stream->print(text);
-    stream->print('\n');
+    serial->println(text);     // print() + '\n' 대신 println()
+    serial->flush();           // 출력 버퍼 전송 완료까지 대기 (중요)
 }
 
+// ✅ '\n'까지 수신
 String CommLink::receiveLine() {
-    return stream->readStringUntil('\n');
+    return serial->readStringUntil('\n');
 }
 
+// 데이터 수신 가능 여부 확인
 bool CommLink::hasLine() {
-    return stream->available() > 0 && stream->peek() != -1;
+    return serial->available() > 0;
 }
 
+// 메시지 전송 후 ACK 대기
 bool CommLink::sendWithAck(const String& message) {
     sendLine(message);
-    Serial.println("[CommLink] 전송된 메시지: "+ message);
-    unsigned long startTime = millis();
-    while (millis() - startTime < timeoutMs) {
+    unsigned long start = millis();
+    while (millis() - start < timeoutMs) {
         if (hasLine()) {
             String response = receiveLine();
-            Serial.println(response);
             response.trim();
             if (response == "ACK") return true;
         }
@@ -57,16 +47,18 @@ bool CommLink::sendWithAck(const String& message) {
     return false;
 }
 
+// 메시지 수신 시 ACK 전송
 void CommLink::waitAndAck() {
     if (hasLine()) {
         String msg = receiveLine();
         msg.trim();
         Serial.print("수신됨: ");
         Serial.println(msg);
-        sendAck();
+        sendAck();  // ACK 응답
     }
 }
 
+// ACK 전송 (println)
 void CommLink::sendAck() {
     sendLine("ACK");
 }

@@ -8,8 +8,8 @@
 
 
 // CommLink용 소프트웨어 시리얼 핀 (GND to GND)
-#define COMM_RX_PIN 8  // CommLink 수신 핀 (RX) = 우노보드 TX (예: 9)
-#define COMM_TX_PIN 9  // CommLink 송신 핀 (TX) = 우노보드 RX (예: 8)
+#define COMM_RX_PIN 4
+#define COMM_TX_PIN 5
 
 #define BAUD_RATE 9600
 

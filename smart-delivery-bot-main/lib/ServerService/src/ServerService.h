@@ -14,7 +14,7 @@
  */
 class ServerService {
 private:
-    int serverPort;                          // HTTP 서버 포트 (복사 저장)
+    int serverPort;                   // HTTP 서버 포트 (복사 저장)
     WebServer server;                 // 내장 웹 서버 인스턴스
 
     // 라우팅 핸들러 콜백 함수들

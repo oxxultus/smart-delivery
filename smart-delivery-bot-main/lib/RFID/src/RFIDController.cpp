@@ -13,10 +13,11 @@ void RFIDController::begin() {
 
 // 디버깅 시리얼과 함께 초기화
 void RFIDController::begin(HardwareSerial &debugSerial) {
+    Serial.println("[RFIDController][1/1] RFID 리더기 사용");
     debug = &debugSerial;
     SPI.begin();        // SPI 시작
     rfid.PCD_Init();    // RFID 초기화
-    if (debug) debug->println("[RFID] RFID 리더기 초기화 완료");
+    if (debug) debug->println("[RFIDController][2/2] RFID 리더기 초기화 완료\n");
 }
 
 // RFID 태그 감지 시 UID 반환

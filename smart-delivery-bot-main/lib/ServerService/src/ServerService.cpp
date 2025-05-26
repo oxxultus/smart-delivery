@@ -10,7 +10,7 @@ ServerService::ServerService(const int serverPort)
 void ServerService::begin() {
     setupRoutes();
     server.begin();
-    Serial.println("[ServerService] Delivery BOT의 내장 HTTP 서버가 시작되었습니다.");
+    Serial.println("[ServerService][1/2] Delivery BOT의 내장 HTTP 서버가 시작되었습니다.");
 }
 
 // 클라이언트 요청을 처리 (loop에서 반복 호출 필요)

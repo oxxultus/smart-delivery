@@ -5,12 +5,11 @@ WiFiConnector::WiFiConnector(const char* ssid, const char* password)
 
 void WiFiConnector::connect() {
     WiFi.begin(ssid, password);
-    Serial.print("[WiFiConnector] 연결 시도 중");
+    Serial.println("[WiFiConnector][1/2] 연결 시도 중");
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        Serial.print(".");
     }
-    Serial.println("\n[WiFiConnector] 연결 성공! IP: " + WiFi.localIP().toString());
+    Serial.println("[WiFiConnector][2/2] 연결 성공! IP: " + WiFi.localIP().toString());Serial.println("");
 }
 
 bool WiFiConnector::isConnected() const {

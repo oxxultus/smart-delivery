@@ -5,106 +5,91 @@
 #include "ServerService.h"
 #include "RFIDController.h"
 #include "WiFiConnector.h"
-#include "WeightSensor.h"
+// #include "WeightSensor.h"
 
 #include "model/PaymentData.h" // 구조체, 클래스
 
 // 함수 선언부 ===========================================================================================================
-bool sendWithRetry(const String& cmd, const int retries = 3); // 명령 전송 함수 (재시도 포함)
-void setServerHandler();                // 핸들러 등록을 진행하는 함수 입니다.
-void fetchPaymentDataUntilSuccess();    // 외부 서버로 GET 요청 전송해 결제 내역을 받아온다.
-void modulsSetting();                   // 일반 모듈을 초기 설정 하는 함수 입니다.
-void checkDetectedUid();                // RFID - UID를 확인 후 결제 내역 체크 하는 함수 입니다.
-bool isWeightChanged();                 // 이전 무게와 현재 무게의 차이를 비교 판단 하는 함수 입니다.
+bool sendWithRetry(const String& cmd, const int retries = 3);       // [UTILITY-1] 명령 전송 함수 (재시도 포함)
+void simpleMessage(String message);                                 // [UTILITY-2] 간편 메시지 사용 메서드
+bool isAdminCard(const String& uid);                                // [LOOP-1] 관리자 카드 여부 판별
+bool refreshPaymentData(int maxRetries = 3);                        // [LOOP-2] 결제 내역 초기화 및 재요청 로직
+bool fetchPaymentDataUntilSuccess(const int count);                 // [LOOP-3] 외부 서버로 GET 요청 전송해 결제 내역을 받아온다.
+void handleMatchedProduct(const String& matchedName);               // [LOOP-4] 상품 매칭 시 동작을 처리하는 함수
+void checkDetectedUid();                                            // [LOOP-5] UID를 인식해서 결제내역 확인 하는 함수
+void modulsSetting();                                               // [SETUP-1] 모듈을 초기 설정 하는 함수입니다.
+void setServerHandler();                                            // [SETUP-2] 핸들러 등록을 진행하는 함수입니다.
+// bool isWeightChanged();                 // 이전 무게와 현재 무게의 차이를 비교 판단 하는 함수 입니다.
 
 // 객체 생성 =============================================================================================================
 WiFiConnector wifi(WIFI_SSID, WIFI_PASSWORD);                 // WiFiConnect 객체 생성
 ServerService serverService(INNER_SERVER_PORT);                    // WebService 객체 생성
 RFIDController rfidController(RC_SDA, RC_RST);                  // RFID 리더기 설정 (SDA, RST)
-WeightSensor weightSensor(HX_DOUT, HX_CLK, HX_FACTOR);       // 무게 센서 설정
+// WeightSensor weightSensor(HX_DOUT, HX_CLK, HX_FACTOR);                   // 무게 센서 설정
+PaymentData payment;                                                        // 결제 내역 저장
 
-HardwareSerial commSerial(2);                                       // UART2
-CommLink comm(commSerial, COMM_RX_PIN, COMM_TX_PIN);              // RX = GPIO16, TX = GPIO17
-
-PaymentData payment;                                                        // 결제 내역
-
-// 프로그램 설정 ==========================================================================================================
+// 프로그램 설정 및 시작 ====================================================================================================
 void setup() {
-    // 일반 모듈 초기 설정
-    modulsSetting();
-
-    // 네트워크 연결 및 내장 서버 설정
-    wifi.connect();                 // 1. wifi 연결
-    fetchPaymentDataUntilSuccess(); // 2. 외부 서버로 GET 요청 전송, 결제 내역을 받아온다.
-    setServerHandler();             // 3. 내장 서버 API 핸들러 메서드 등록
-    serverService.begin();          // 4. 내장 서버 구동 설정
-
-    Serial.println("[DELIVERY BOT - MAIN] 메인 모듈 준비 완료");
+    modulsSetting();            // 1. 일반 모듈 초기 설정
+    setServerHandler();         // 2. 내장 서버 API 핸들러 메서드 등록
+    serverService.begin();      // 3. 내장 서버 구동 설정
+    Serial.println("[DELIVERY BOT][MAIN] 메인 모듈 준비 완료"); simpleMessage("종료선");  // 함수: [UTILITY-2]
 }
 
 void loop() {
-    serverService.handle();  // 내장 서버 구동
-
-    checkDetectedUid(); // UID를 인식해서 결제내역 확인 하는 함수
-
-    delay(1);  // WDT 리셋 방지
+    serverService.handle();     // 1. 내장 서버 구동
+    checkDetectedUid();         // 2. UID를 인식해서 결제내역 확인 하는 함수
+    delay(1);                   // 3. WDT 리셋 방지
 }
 
-// SET-UP FUNCTION =====================================================================================================
+// SETUP FUNCTION =====================================================================================================
 
-// 모듈을 초기 설정 하는 함수입니다.
+// [SETUP-1] 모듈을 초기 설정 하는 함수입니다.
 void modulsSetting() {
     Serial.begin(SERIAL_BAUDRATE);   // 시리얼 설정
 
+    // 함수: [UTILITY-2]
+    simpleMessage("시작선");
     if (USE_RFID) {
         rfidController.begin(Serial); // RFID 리더기 초기화
-        Serial.println("[INFO] RFID 리더기 사용 중");
     } else {
         Serial.println("[INFO] RFID 리더기 비활성화됨 (하드웨어 없음)");
     }
-    weightSensor.begin();                  // weightSensor 초기화
-    comm.begin(9600);             // comm 객체 통신 시리얼 설정
+    // weightSensor.begin();             // weightSensor 초기화
+    Serial2.begin(SERIAL2_BAUDRATE);
 
-    Serial.println("[INFO] 모든 로컬 모듈 초기화 완료");
+    wifi.connect();             // wifi 연결
 }
 
-// 명령 전송 함수 (재시도 포함)
-bool sendWithRetry(const String& cmd, const int retries) {
-    for (int i = 0; i < retries; ++i) {
-        if (comm.sendWithAck(cmd)) {
-            Serial.println(cmd);
-            Serial.println("[CommLink] " + cmd + " 명령 전송 성공 (ACK 수신)");
-            return true;
-        }
-        delay(200);  // 재시도 간 딜레이
-    }
-    Serial.println("[CommLink] " + cmd + " 명령 전송 실패 (ACK 없음)");
-    return false;
-}
-
-// 핸들러 등록을 진행하는 함수입니다.
+// [SETUP-2] 핸들러 등록을 진행하는 함수입니다.
 void setServerHandler() {
     // 핸들러 등록
     serverService.setStartHandler([]() {
         Serial.println("[ServerService][GET /start] 로봇 시작 명령 수신");
 
-        if (payment.getPaymentId() != "") {
-            Serial.println("[ServerService][START] 결제 내역이 존재함 → 로봇 시작");
-            sendWithRetry("START");
-        } else {
-            Serial.println("[ServerService][BLOCKED] 결제 내역 없음 → 시작 차단됨");
+        // 결제 내역이 없으면 수신 시도
+        if (payment.getPaymentId() == "") {
+            Serial.println("[ServerService] 결제 내역 없음 → 새로 요청");
+            const bool result = fetchPaymentDataUntilSuccess(5);
+            if (!result || payment.getPaymentId() == "") {
+                Serial.println("[ServerService][BLOCKED] 서버에 결제 내역 없음 → 시작 차단됨");
+                return;
+            }
         }
+        // 결제 내역이 이미 존재하거나 새로 수신 성공한 경우
+        Serial.println("[ServerService][START] 결제 내역이 존재함 → 로봇 시작");
+        sendWithRetry("START"); // 함수: [UTILITY-1]
     });
     serverService.setGoHandler([]() {
         Serial.println("[ServerService][GET /go] 로봇 이동 명령 수신");
-        sendWithRetry("GO");
+        sendWithRetry("GO"); // 함수: [UTILITY-1]
     });
     serverService.setStopHandler([]() {
         Serial.println("[ServerService][GET /stop] 로봇 정지 명령 수신");
-        sendWithRetry("STOP");
+        sendWithRetry("STOP"); // 함수: [UTILITY-1]
     });
 
-    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 확인 절차 시작 = = = = = = = = = = = = = = = = = = = = = = =");
+    Serial.println("[setServerHandler][1/2] 내장 서버 API 실행 함수 등록 확인 절차 시작");
         auto printHandlerStatus = [](const char* name, bool status) {
             Serial.print("[");
             Serial.print(status ? "\u2714" : "\u2718"); // ✔ 또는 ✘
@@ -115,80 +100,130 @@ void setServerHandler() {
         printHandlerStatus("/start", serverService.isStartHandlerSet());
         printHandlerStatus("/go",    serverService.isGoHandlerSet());
         printHandlerStatus("/stop",  serverService.isStopHandlerSet());
-    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 절차 완료 = = = = = = = = = = = = = = = = = = = = = = = = =");
+    Serial.println("[setServerHandler][2/2] 내장 서버 API 실행 함수 등록 절차 완료\n");
 }
 
-// 외부 서버로 GET 요청 전송해 결제 내역을 받아온다. (결제 내역 수신 시도 → 성공할 때까지 반복)
-void fetchPaymentDataUntilSuccess() {
-    while (true) {
+// LOOP FUNCTION =======================================================================================================
+
+// [LOOP-1] 관리자 카드 여부 판별
+bool isAdminCard(const String& uid) {
+    return uid == ADMIN_UID || uid == MASTER_KEY;
+}
+
+// [LOOP-2] 결제 내역 초기화 및 재요청 로직
+bool refreshPaymentData(int maxRetries) {
+    Serial.println("\n[RFIDController][[2/3] 관리자 카드 감지됨 → 결제 내역 초기화");
+    payment.clear();
+
+    if (!fetchPaymentDataUntilSuccess(maxRetries)) {
+        Serial.println("[ServerService][PaymentData][404] " + String(maxRetries) + "회 시도하였지만 결제내역 가져오는데 실패했습니다. 재시도 하려면 카드를 다시 찍어주세요.");
+        return false;
+    }
+    return true;
+}
+
+// [LOOP-3] 외부 서버로 GET 요청 전송해 결제 내역을 받아온다.
+bool fetchPaymentDataUntilSuccess(const int count) {
+    int i = 0;
+    while ( i < count) {
+        Serial.println("[ServerService][PaymentData][1/3] 결제 내역을 가져오는 중입니다..");
         String getResponse = ServerService::sendGETRequest(MAIN_SERVER_IP, MAIN_SERVER_PORT, GET_PAYMENT);
-        Serial.println("[ServerService][GET 응답] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
-        Serial.println(getResponse);
+        //Serial.println(getResponse);
 
         String responseBody = getResponse.substring(getResponse.indexOf("\r\n\r\n") + 4);
 
         if (payment.parseFromJson(responseBody)) {
+            Serial.println("[ServerService][PaymentData][2/3] 가져온 결제 내역을 출력합니다.");
             // Serial.println("[ServerService][INFO] 결제 ID: " + payment.getPaymentId());
             // Serial.println("[ServerService][INFO] 결제 상품 목록:");
             payment.printItems();
-            Serial.println("[ServerService][SUCCESS] 결제 내역 수신 성공. 다음 단계로 진행합니다.");
-            Serial.println("= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
-            break;
+            Serial.println("[ServerService][PaymentData][3/3] 결제 내역 수신 성공. 다음 단계로 진행합니다.");Serial.println("");
+            return true;
         }
 
-        Serial.println("[ServerService][RETRY] 결제 내역 파싱 실패. 3초 후 재시도...");
-        delay(3000);
+        Serial.println("[ServerService][재시도] 결제 내역 파싱 실패. 2초 후 재시도...");Serial.println("");
+        delay(3000); i++;
     }
+    return false;
 }
 
+// [LOOP-4] 상품 매칭 시 동작을 처리하는 함수
+void handleMatchedProduct(const String& matchedName) {
+    Serial.println("[RFIDController][2/3] 일치하는 상품: " + matchedName + " → 모터 정지 명령 전송");
+    // 함수: [UTILITY-1]
+    if (sendWithRetry("STOP")) {
+        Serial.println("[RFIDController][3/3] STOP 명령 전송 및 ACK 수신 성공");
+    } else {
+        Serial.println("[RFIDController][3/3] STOP 명령 전송 실패 (ACK 없음)");
+    }
 
-// LOOP FUNCTION =======================================================================================================
+    Serial.println("[RFIDController][3/3] 다음 상품으로 이동 합니다.\n");
+}
 
-// UID를 인식해서 결제내역 확인 하는 함수
+// [LOOP-5] UID를 인식해서 결제내역 확인 하는 함수
 void checkDetectedUid() {
     String detectedUid = rfidController.getUID();
     if (detectedUid.isEmpty()) return;
 
-    Serial.println("[RFIDController] 감지된 UID: " + detectedUid);
+    Serial.println("[RFIDController][1/3] 감지된 UID: " + detectedUid);
 
-    // 관리자 초기화 로직
-    if (detectedUid == ADMIN_UID) {
-        Serial.println("[ADMIN] 관리자 카드 감지됨 → 결제 내역 초기화");
-
-        // 결제 내역 초기화
-        payment.clear();
-
-        // 결제 내역 다시 요청
-        fetchPaymentDataUntilSuccess();
-
-        Serial.println("[ADMIN] 새로운 결제 내역 수신 완료");
-        // TODO: 필요하다면 초기 자리로 돌아가는 로직이 있으면 좋아보인다.
-        return;  // 관리자 로직 이후 일반 로직 생략
+    // 함수: [LOOP-2], [LOOP-3], [LOOP-4]
+    if (isAdminCard(detectedUid)) {
+        refreshPaymentData(); // 기본 3회 시도
+        return;
     }
 
+    // 함수 [LOOP-5]
     String matchedName;
     if (payment.matchUID(detectedUid, matchedName)) {
-        Serial.println("[RFIDController] 일치하는 상품: " + matchedName + " → 모터 정지 명령 전송");
-
-        // 모터 정지 명령 전송 (예: 다른 아두이노에 STOP 명령 전송)
-        if (comm.sendWithAck("STOP")) {
-            Serial.println("[CommLink] STOP 명령 전송 성공 (ACK 수신)");
-            //TODO: STOP 명령 수신 시 진열대(모듈)에 “상품 투입” 명령을 내려야 함
-            // 1. → 메인 서버에 GET 요청으로 상품 정보 전달 (카트)
-            // 2. → 메인 서버는 해당 상품을 임시 변수에 저장 (메인 서버)
-            // 3. → 진열대는 서버에 지속적으로 GET 요청하여 처리할 상품 있는지 확인 (진열대)
-            // 4. → 상품 처리 완료 후 서버에 완료 GET 전송 (진열대)
-            // 5. → 서버는 카트 로봇에게 다음 동작 명령 전송 (메인 서버)
-        } else {
-            Serial.println("[CommLink] STOP 명령 전송 실패 (ACK 없음)");
-        }
+        handleMatchedProduct(matchedName);
     } else {
-        Serial.println("[RFIDController] 감지된 UID는 결제 내역에 없음 → 무시");
+        Serial.println("[RFIDController][2/3] 감지된 UID는 결제 내역에 없음 → 무시");
+        Serial.println("[RFIDController][3/3] 다음 상품으로 이동 합니다.\n");
+    }
+}
+
+// UTILITY FUNCTION ====================================================================================================
+
+// [UTILITY-1] 명령 전송 함수 (재시도 포함)
+bool sendWithRetry(const String& cmd, const int retries) {
+    for (int i = 0; i < retries; ++i) {
+        Serial2.println(cmd);  // 명령 전송
+        Serial.println("[Wired Comm][Serial2][1/2] " + cmd + " 명령 전송");
+
+        unsigned long start = millis();
+        while (millis() - start < 1000) {  // 1초 이내 응답 대기
+            if (Serial2.available()) {
+                String response = Serial2.readStringUntil('\n');
+                response.trim();
+                if (response == "ACK") {
+                    Serial.println("[Wired Comm][Serial2][2/2] ACK 수신 성공");
+                    return true;
+                } else {
+                    Serial.println("[Wired Comm][Serial2][2/2]  잘못된 응답: " + response);
+                }
+            }
+        }
+
+        Serial.println("[Wired Comm][Serial2][RETRY]  ACK 수신 실패, 재시도 " + String(i + 1) + "\n");
+        delay(200);
+    }
+
+    Serial.println("[Wired Comm][4/4]  " + cmd + " 명령 전송 실패 (ACK 없음)\n");
+    return false;
+}
+
+// [UTILITY-2] 간편 메시지 사용 메서드
+void simpleMessage(String message) {
+    if (message == "시작선") {
+        Serial.println("= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
+    }else if (message == "종료선") {
+        Serial.println("= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
     }
 }
 
 // 이전 무게와 현재 무게의 차이를 비교 판단 하는 함수 입니다.
-bool isWeightChanged(const float thresholdGram) {
+/* bool isWeightChanged(const float thresholdGram) {
     static float lastWeight = 0.0;  // 이전 측정값 저장 (초기 0)
     float currentWeight = weightSensor.getWeight();  // 현재 무게 측정
     float diff = abs(currentWeight - lastWeight);    // 변화량 계산
@@ -199,3 +234,5 @@ bool isWeightChanged(const float thresholdGram) {
     }
     return false;
 }
+*/
+

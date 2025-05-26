@@ -11,24 +11,21 @@
 
 class CommLink {
 private:
-    Stream* stream = nullptr;
-
 #if defined(ESP32)
-    HardwareSerial* hwSerial = nullptr;
-    int rxPin = -1;
-    int txPin = -1;
+    HardwareSerial* serial;   // ESP32용 하드웨어 시리얼
+    int rxPin;
+    int txPin;
 #else
-    SoftwareSerial* swSerial = nullptr;
+    SoftwareSerial* serial;   // AVR용 소프트웨어 시리얼
 #endif
 
     uint16_t timeoutMs = 2000;
 
 public:
-    // ESP32용 생성자 (핀 포함)
 #if defined(ESP32)
     CommLink(HardwareSerial& hwSerial, int rx, int tx);
 #else
-    CommLink(uint8_t rxPin, uint8_t txPin);  // Uno용
+    CommLink(uint8_t rx, uint8_t tx);
 #endif
 
     void begin(long baudRate);
@@ -40,4 +37,4 @@ public:
     void sendAck();
 };
 
-#endif
+#endif // COMMLINK_H

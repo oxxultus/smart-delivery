@@ -210,6 +210,4 @@
  .pio/libdeps/esp32dev/MFRC522/src/deprecated.h \
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.h \
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.h \
- lib/WiFiConnector/src/WiFiConnector.h \
- lib/WeightSensor/src/WeightSensor.h \
- .pio/libdeps/esp32dev/HX711/src/HX711.h src/model/PaymentData.h
+ lib/WiFiConnector/src/WiFiConnector.h src/model/PaymentData.h
