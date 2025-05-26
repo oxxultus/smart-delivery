@@ -72,6 +72,7 @@ void modulsSetting() {
 bool sendWithRetry(const String& cmd, const int retries) {
     for (int i = 0; i < retries; ++i) {
         if (comm.sendWithAck(cmd)) {
+            Serial.println(cmd);
             Serial.println("[CommLink] " + cmd + " 명령 전송 성공 (ACK 수신)");
             return true;
         }

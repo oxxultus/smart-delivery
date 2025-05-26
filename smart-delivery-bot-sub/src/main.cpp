@@ -4,7 +4,7 @@
 
 // 함수 선언부 ===========================================================================================================
 void modulsSetting();   // 모듈을 초기 설정 하는 함수입니다.
-void handleCommand();   // CommLink로부터 수신된 명령을 파싱하고 SmartBot 동작 제어
+void waitAndHandle();   // CommLink로부터 수신된 명령을 파싱하고 SmartBot 동작 제어
 
 // 객체 생성 =============================================================================================================
 CommLink comm(COMM_RX_PIN, COMM_TX_PIN);
@@ -18,8 +18,7 @@ void setup() {
 }
 
 void loop() {
-    comm.waitAndAck();  // 명령 수신 및 ACK 응답
-    handleCommand();    // 수신된 명령 처리
+    waitAndHandle();    // 수신된 명령 처리
     bot.update();       // 라인트레이싱 동작
 }
 // SET-UP FUNCTION =====================================================================================================
@@ -37,13 +36,17 @@ void modulsSetting() {
 // LOOP FUNCTION =======================================================================================================
 
 // CommLink로부터 수신된 명령을 파싱하고 SmartBot 동작 제어
-void handleCommand() {
+// 명령 수신 + ACK 응답 + 명령 실행까지 하나로 처리
+void waitAndHandle() {
     if (comm.hasLine()) {
+        Serial.println("[DEBUG] 수신 있음");
         String command = comm.receiveLine();
         command.trim();
 
-        Serial.print("명령 수신: ");
+        Serial.print("[서브 모듈] 명령 수신: ");
         Serial.println(command);
+
+        comm.sendAck();  // ACK 전송은 여기서 바로!
 
         if (command == "START") {
             bot.resume();
@@ -52,7 +55,7 @@ void handleCommand() {
         } else if (command == "TOGGLE") {
             bot.toggle();
         } else {
-            Serial.println("알 수 없는 명령");
+            Serial.println("[서브 모듈] 알 수 없는 명령");
         }
     }
 }

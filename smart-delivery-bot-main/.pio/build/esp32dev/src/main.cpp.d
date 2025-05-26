@@ -134,6 +134,7 @@
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
  include/Config.h lib/CommLink/src/CommLink.h \
+ /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/cores/esp32/HardwareSerial.h \
  lib/ServerService/src/ServerService.h \
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFi.h \
  /Users/oxxultus/.platformio/packages/framework-arduinoespressif32/cores/esp32/Print.h \
