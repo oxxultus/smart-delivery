@@ -10,7 +10,7 @@
 #include "model/PaymentData.h" // 구조체, 클래스
 
 // 함수 선언부 ===========================================================================================================
-bool ssendWithRetry(const String& cmd, const int retries = 3); // 명령 전송 함수 (재시도 포함)
+bool sendWithRetry(const String& cmd, const int retries = 3); // 명령 전송 함수 (재시도 포함)
 void setServerHandler();                // 핸들러 등록을 진행하는 함수 입니다.
 void fetchPaymentDataUntilSuccess();    // 외부 서버로 GET 요청 전송해 결제 내역을 받아온다.
 void modulsSetting();                   // 일반 모듈을 초기 설정 하는 함수 입니다.
@@ -22,7 +22,9 @@ WiFiConnector wifi(WIFI_SSID, WIFI_PASSWORD);                 // WiFiConnect 객
 ServerService serverService(INNER_SERVER_PORT);                    // WebService 객체 생성
 RFIDController rfidController(RC_SDA, RC_RST);                  // RFID 리더기 설정 (SDA, RST)
 WeightSensor weightSensor(HX_DOUT, HX_CLK, HX_FACTOR);       // 무게 센서 설정
-CommLink comm(COMM_RX_PIN, COMM_TX_PIN);                        // RX/TX 핀은 소프트웨어 시리얼용
+
+HardwareSerial commSerial(2);                                       // UART2
+CommLink comm(commSerial, COMM_RX_PIN, COMM_TX_PIN);              // RX = GPIO16, TX = GPIO17
 
 PaymentData payment;                                                        // 결제 내역
 
@@ -44,6 +46,8 @@ void loop() {
     serverService.handle();  // 내장 서버 구동
 
     checkDetectedUid(); // UID를 인식해서 결제내역 확인 하는 함수
+
+    delay(1);  // WDT 리셋 방지
 }
 
 // SET-UP FUNCTION =====================================================================================================
@@ -51,7 +55,13 @@ void loop() {
 // 모듈을 초기 설정 하는 함수입니다.
 void modulsSetting() {
     Serial.begin(SERIAL_BAUDRATE);   // 시리얼 설정
-    rfidController.begin(Serial);       // RFID 리더기 초기화
+
+    if (USE_RFID) {
+        rfidController.begin(Serial); // RFID 리더기 초기화
+        Serial.println("[INFO] RFID 리더기 사용 중");
+    } else {
+        Serial.println("[INFO] RFID 리더기 비활성화됨 (하드웨어 없음)");
+    }
     weightSensor.begin();                  // weightSensor 초기화
     comm.begin(9600);             // comm 객체 통신 시리얼 설정
 
@@ -59,7 +69,7 @@ void modulsSetting() {
 }
 
 // 명령 전송 함수 (재시도 포함)
-bool sendWithRetry(const String& cmd, const int retries = 3) {
+bool sendWithRetry(const String& cmd, const int retries) {
     for (int i = 0; i < retries; ++i) {
         if (comm.sendWithAck(cmd)) {
             Serial.println("[CommLink] " + cmd + " 명령 전송 성공 (ACK 수신)");
@@ -93,7 +103,7 @@ void setServerHandler() {
         sendWithRetry("STOP");
     });
 
-    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 확인 절차 시작");
+    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 확인 절차 시작 = = = = = = = = = = = = = = = = = = = = = = =");
         auto printHandlerStatus = [](const char* name, bool status) {
             Serial.print("[");
             Serial.print(status ? "\u2714" : "\u2718"); // ✔ 또는 ✘
@@ -104,23 +114,24 @@ void setServerHandler() {
         printHandlerStatus("/start", serverService.isStartHandlerSet());
         printHandlerStatus("/go",    serverService.isGoHandlerSet());
         printHandlerStatus("/stop",  serverService.isStopHandlerSet());
-    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 절차 완료");
+    Serial.println("[setServerHandler] 내장 서버 API 실행 함수 등록 절차 완료 = = = = = = = = = = = = = = = = = = = = = = = = =");
 }
 
 // 외부 서버로 GET 요청 전송해 결제 내역을 받아온다. (결제 내역 수신 시도 → 성공할 때까지 반복)
 void fetchPaymentDataUntilSuccess() {
     while (true) {
         String getResponse = ServerService::sendGETRequest(MAIN_SERVER_IP, MAIN_SERVER_PORT, GET_PAYMENT);
-        Serial.println("[ServerService] - GET 응답");
+        Serial.println("[ServerService][GET 응답] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
         Serial.println(getResponse);
 
         String responseBody = getResponse.substring(getResponse.indexOf("\r\n\r\n") + 4);
 
         if (payment.parseFromJson(responseBody)) {
-            Serial.println("[ServerService][INFO] 결제 ID: " + payment.getPaymentId());
-            Serial.println("[ServerService][INFO] 결제 상품 목록:");
+            // Serial.println("[ServerService][INFO] 결제 ID: " + payment.getPaymentId());
+            // Serial.println("[ServerService][INFO] 결제 상품 목록:");
             payment.printItems();
             Serial.println("[ServerService][SUCCESS] 결제 내역 수신 성공. 다음 단계로 진행합니다.");
+            Serial.println("= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
             break;
         }
 
@@ -187,51 +198,3 @@ bool isWeightChanged(const float thresholdGram) {
     }
     return false;
 }
-
-// 가이드라인 주석 =========================================================================================================
-
-/* 메인 서버로부터 반환 받아야 하는 형식
-{
-    "paymentId": "123e4567-e89b-12d3-a456-426655440000",
-    "과자": ["a1b2c3d4", "3"],
-    "음료수": ["f5e6d7c8", "2"],
-    "사탕": ["12345678", "1"]
-  }
-  */
-
-/* 외부 서버로 POST 요청 전송
-    DynamicJsonDocument doc(256);
-    doc["temp"] = 26.7;
-    doc["battery"] = 87;
-
-    String postResponse = WebService::sendPostRequest("192.168.0.100", 8080, "/sensor", doc);
-    Serial.println("[POST 응답]");
-    Serial.println(postResponse);
- */
-
-/* 다른 수신 보드의 main 코드 예제
-    #include <SoftwareSerial.h>
-
-    SoftwareSerial comm(2, 3);  // RX, TX 핀 설정
-
-    void setup() {
-        Serial.begin(9600);
-        comm.begin(9600);
-    }
-
-    void loop() {
-        if (comm.available()) {
-            String cmd = comm.readStringUntil('\n');
-            cmd.trim();
-            Serial.println("수신 명령: " + cmd);
-
-            if (cmd == "STOP") {
-                Serial.println("[모터] 정지 명령 수신됨 → 실행");
-                // 예: motor.stop();
-                comm.println("ACK");
-            }
-        }
-    }
- */
-
-// =====================================================================================================================

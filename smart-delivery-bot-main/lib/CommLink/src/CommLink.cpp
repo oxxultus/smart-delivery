@@ -1,10 +1,10 @@
 #include "CommLink.h"
 
-CommLink::CommLink(uint8_t rxPin, uint8_t txPin)
-    : serial(rxPin, txPin) {}
+CommLink::CommLink(HardwareSerial& hwSerial, int rx, int tx)
+    : serial(hwSerial), rxPin(rx), txPin(tx) {}
 
 void CommLink::begin(long baudRate) {
-    serial.begin(baudRate);
+    serial.begin(baudRate, SERIAL_8N1, rxPin, txPin);
 }
 
 void CommLink::sendLine(const String& text) {
@@ -47,7 +47,6 @@ void CommLink::sendAck() {
     sendLine("ACK");
 }
 
-// 내부 SoftwareSerial에 접근 가능한 메서드
 Stream& CommLink::getSerial() {
     return serial;
 }

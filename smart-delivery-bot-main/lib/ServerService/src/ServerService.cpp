@@ -38,28 +38,29 @@ void ServerService::setPostHandler(const std::function<void(const String&)> &han
 // ========== 클라이언트 요청 전송 ==========================================================================================
 String ServerService::sendGETRequest(const char* host, const uint16_t port, const String& pathWithParams) {
     String response = "";
+    WiFiClient client;
 
-    if (WiFiClient client; client.connect(host, port)) {
-        // GET 요청 전송
+    if (client.connect(host, port)) {
         client.print(String("GET ") + pathWithParams + " HTTP/1.1\r\n" +
                      "Host: " + host + "\r\n" +
                      "Connection: close\r\n\r\n");
 
-        // 응답 수신
-        while (client.connected() || client.available()) {
-            if (client.available()) {
-                response += client.readStringUntil('\n');
+        unsigned long timeout = millis() + 3000;
+        while (client.connected() && millis() < timeout) {
+            while (client.available()) {
+                response += (char)client.read();
             }
         }
         client.stop();
     }
-    return response;  // 전체 응답(헤더 + 바디)
+
+    return response;
 }
 
 String ServerService::sendPostRequest(const char* host, uint16_t port, const String& path, const JsonDocument& jsonDoc) {
     String response = "";
-
-    if (WiFiClient client; client.connect(host, port)) {
+    WiFiClient client;
+    if (client.connect(host, port)) {
         // JSON 데이터 직렬화
         String jsonString;
         serializeJson(jsonDoc, jsonString);

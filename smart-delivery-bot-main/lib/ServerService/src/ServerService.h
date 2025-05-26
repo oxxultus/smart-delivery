@@ -1,8 +1,8 @@
 #ifndef WIFI_WEB_SERVICE_H
 #define WIFI_WEB_SERVICE_H
 
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <functional>
 #include <WString.h>
@@ -15,7 +15,7 @@
 class ServerService {
 private:
     int serverPort;                          // HTTP 서버 포트 (복사 저장)
-    ESP8266WebServer server;                 // 내장 웹 서버 인스턴스
+    WebServer server;                 // 내장 웹 서버 인스턴스
 
     // 라우팅 핸들러 콜백 함수들
     std::function<void()> startHandler = nullptr;
