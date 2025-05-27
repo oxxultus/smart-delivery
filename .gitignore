@@ -1,90 +1,93 @@
 # PlatformIO build system
-smart-delivery-bot-first/.pio/
-smart-delivery-bot-first/.pioenvs/
-smart-delivery-bot-first/.build/
-smart-delivery-bot-first/*.elf
-smart-delivery-bot-first/*.bin
-smart-delivery-bot-first/*.hex
-smart-delivery-bot-first/*.map
+smart-delivery-bot/.pio/
+smart-delivery-bot/.pioenvs/
+smart-delivery-bot/.build/
+smart-delivery-bot/*.elf
+smart-delivery-bot/*.bin
+smart-delivery-bot/*.hex
+smart-delivery-bot/*.map
+smart-delivery-bot/test
 
-smart-delivery-bot-second/.pio/
-smart-delivery-bot-second/.pioenvs/
-smart-delivery-bot-second/.build/
-smart-delivery-bot-second/*.elf
-smart-delivery-bot-second/*.bin
-smart-delivery-bot-second/*.hex
-smart-delivery-bot-second/*.map
+smart-delivery-bot-module-moter/.pio/
+smart-delivery-bot-module-moter/.pioenvs/
+smart-delivery-bot-module-moter/.build/
+smart-delivery-bot-module-moter/*.elf
+smart-delivery-bot-module-moter/*.bin
+smart-delivery-bot-module-moter/*.hex
+smart-delivery-bot-module-moter/*.map
+smart-delivery-bot-module-moter/test
 
-smart-delivery-stand/.pio/
-smart-delivery-stand/.pioenvs/
-smart-delivery-stand/.build/
-smart-delivery-stand/*.elf
-smart-delivery-stand/*.bin
-smart-delivery-stand/*.hex
-smart-delivery-stand/*.map
+smart-delivery-display-stand/.pio/
+smart-delivery-display-stand/.pioenvs/
+smart-delivery-display-stand/.build/
+smart-delivery-display-stand/*.elf
+smart-delivery-display-stand/*.bin
+smart-delivery-display-stand/*.hex
+smart-delivery-display-stand/*.map
+smart-delivery-display-stand/test
 
 # Compiled object files
-smart-delivery-bot-first/*.o
-smart-delivery-bot-first/*.obj
-smart-delivery-bot-first/*.a
-smart-delivery-bot-first/*.lib
+smart-delivery-bot/*.o
+smart-delivery-bot/*.obj
+smart-delivery-bot/*.a
+smart-delivery-bot/*.lib
 
-smart-delivery-bot-second/*.o
-smart-delivery-bot-second/*.obj
-smart-delivery-bot-second/*.a
-smart-delivery-bot-second/*.lib
+smart-delivery-bot-module-moter/*.o
+smart-delivery-bot-module-moter/*.obj
+smart-delivery-bot-module-moter/*.a
+smart-delivery-bot-module-moter/*.lib
 
-smart-delivery-stand/*.o
-smart-delivery-stand/*.obj
-smart-delivery-stand/*.a
-smart-delivery-stand/*.lib
+smart-delivery-display-stand/*.o
+smart-delivery-display-stand/*.obj
+smart-delivery-display-stand/*.a
+smart-delivery-display-stand/*.lib
 
 # Core dumps
-smart-delivery-bot-first/core
+smart-delivery-bot/core
 
-smart-delivery-bot-second/core
+smart-delivery-bot-module-moter/core
 
-smart-delivery-stand/core
+smart-delivery-display-stand/core
 
 # DS_Store (macOS)
 .DS_Store
-smart-delivery-bot-first/.DS_Store
+smart-delivery-bot/.DS_Store
 
-smart-delivery-bot-second/.DS_Store
+smart-delivery-bot-module-moter/.DS_Store
 
-smart-delivery-stand/.DS_Store
+smart-delivery-display-stand/.DS_Store
 
 # VSCode / JetBrains IDE settings
-smart-delivery-bot-first/.vscode/
-smart-delivery-bot-first/.idea/
+smart-delivery-bot/.vscode/
+smart-delivery-bot/.idea/
 
-smart-delivery-bot-second/.vscode/
-smart-delivery-bot-second/.idea/
+smart-delivery-bot-module-moter/.vscode/
+smart-delivery-bot-module-moter/.idea/
 
-smart-delivery-stand/.vscode/
-smart-delivery-stand/.idea/
+smart-delivery-display-stand/.vscode/
+smart-delivery-display-stand/.idea/
 
 
 # Python bytecode (if you use scripts)
-smart-delivery-bot-first/__pycache__/
-Smart-delivery-bot-first/*.pyc
+smart-delivery-bot/__pycache__/
+smart-delivery-bot/*.pyc
 
-smart-delivery-bot-second/__pycache__/
-smart-delivery-bot-second/*.pyc
+smart-delivery-bot-module-moter/__pycache__/
+smart-delivery-bot-module-moter/*.pyc
 
-smart-delivery-stand/__pycache__/
-smart-delivery-stand/*.pyc
+smart-delivery-display-stand/__pycache__/
+smart-delivery-display-stand/*.pyc
 
 # Library storage (optional)
-Smart-delivery-bot-first/.pylibs/
+smart-delivery-bot/.pylibs/
 
-smart-delivery-bot-second/.pylibs/
+smart-delivery-bot-module-moter/.pylibs/
 
-smart-delivery-stand/.pylibs/
+smart-delivery-display-stand/.pylibs/
 
 #CLion IDE
-Smart-delivery-bot-first/.idea/
+smart-delivery-bot/.idea/
 
-smart-delivery-bot-second/.idea/
+smart-delivery-bot-module-moter/.idea/
 
-smart-delivery-stand/.idea/
+smart-delivery-display-stand/.idea/
