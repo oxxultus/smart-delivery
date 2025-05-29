@@ -31,6 +31,10 @@ void ServerService::setStopHandler(const std::function<void()> &handler) {
     stopHandler = handler;
 }
 
+void ServerService::setResetHandler(const std::function<void()> &handler) {
+    resetHandler = handler;
+}
+
 void ServerService::setPostHandler(const std::function<void(const String&)> &handler) {
     postHandler = handler;
 }
@@ -89,6 +93,7 @@ void ServerService::setupRoutes() {
     if (startHandler) {
         server.on("/start", HTTP_GET, [this]() {
             startHandler();
+            server.sendHeader("Access-Control-Allow-Origin", "*");
             server.send(200, "application/json", "{\"message\":\"Handled GET /start\"}");
         });
     }
@@ -97,6 +102,7 @@ void ServerService::setupRoutes() {
     if (goHandler) {
         server.on("/go", HTTP_GET, [this]() {
             goHandler();
+            server.sendHeader("Access-Control-Allow-Origin", "*");
             server.send(200, "application/json", "{\"message\":\"Handled GET /go\"}");
         });
     }
@@ -105,7 +111,17 @@ void ServerService::setupRoutes() {
     if (stopHandler) {
         server.on("/stop", HTTP_GET, [this]() {
             stopHandler();
+            server.sendHeader("Access-Control-Allow-Origin", "*");
             server.send(200, "application/json", "{\"message\":\"Handled GET /stop\"}");
+        });
+    }
+
+    // GET: /reset
+    if (resetHandler) {
+        server.on("/reset", HTTP_GET, [this]() {
+            resetHandler();
+            server.sendHeader("Access-Control-Allow-Origin", "*");
+            server.send(200, "application/json", "{\"message\":\"Handled GET /reset\"}");
         });
     }
 
@@ -114,6 +130,7 @@ void ServerService::setupRoutes() {
         server.on("/post", HTTP_POST, [this]() {
             String body = server.arg("plain"); // 요청 본문 추출
             postHandler(body);
+            server.sendHeader("Access-Control-Allow-Origin", "*");
             server.send(200, "application/json", "{\"message\":\"Handled POST /post\"}");
         });
     }
@@ -130,4 +147,8 @@ void ServerService::setupRoutes() {
 
 [[nodiscard]] bool ServerService::isStopHandlerSet() const {
     return static_cast<bool>(stopHandler);
+}
+
+[[nodiscard]] bool ServerService::isResetHandlerSet() const {
+    return static_cast<bool>(resetHandler);
 }

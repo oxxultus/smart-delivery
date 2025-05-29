@@ -21,6 +21,7 @@ private:
     std::function<void()> startHandler = nullptr;
     std::function<void()> goHandler = nullptr;
     std::function<void()> stopHandler = nullptr;
+    std::function<void()> resetHandler = nullptr;
     std::function<void(const String&)> postHandler = nullptr;
 
     // 내부 메서드
@@ -36,6 +37,7 @@ public:
     void setStartHandler(const std::function<void()> &handler);                 // /start GET
     void setGoHandler(const std::function<void()> &handler);                    // /go GET
     void setStopHandler(const std::function<void()> &handler);                  // /stop GET
+    void setResetHandler(const std::function<void()> &handler);                  // /reset GET
     void setPostHandler(const std::function<void(const String&)> &handler);     // /post POST
 
     // 외부 서버로 HTTP 요청 전송
@@ -46,6 +48,7 @@ public:
     [[nodiscard]] bool isStartHandlerSet() const;
     [[nodiscard]] bool isGoHandlerSet() const;
     [[nodiscard]] bool isStopHandlerSet() const;
+    [[nodiscard]] bool isResetHandlerSet() const;
 };
 
 #endif // WIFI_WEB_SERVICE_H

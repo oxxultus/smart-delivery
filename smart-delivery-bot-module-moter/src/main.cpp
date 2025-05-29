@@ -6,10 +6,11 @@ void modulsSetting();   // 모듈을 초기 설정 하는 함수입니다.
 void waitAndHandle();   // CommLink로부터 수신된 명령을 파싱하고 SmartBot 동작 제어
 
 // 객체 생성 =============================================================================================================
-SmartBot bot(1, 2, A0, A1);  // 모터 포트: 1,2 / 센서: A0, A1
+SmartBot bot(1, 4, A0, A5);  // 모터 포트: 1,2 / 센서: A0, A1
 
 #include <SoftwareSerial.h>
 SoftwareSerial comm(COMM_RX_PIN, COMM_TX_PIN);  // 수신 RX=2, 송신 TX=3
+
 
 // 프로그램 설정 ==========================================================================================================
 void setup() {
@@ -20,8 +21,8 @@ void setup() {
 
 void loop() {
     waitAndHandle();    // 수신된 명령 처리
-    bot.update();       // 라인트레이싱 동작
-    delay(10);      // 반드시 넣기
+
+    bot.update();        // 주행 상태라면 동작
 }
 // SET-UP FUNCTION =====================================================================================================
 
@@ -50,18 +51,19 @@ void waitAndHandle() {
         // ACK 전송
         comm.println("ACK");
 
-        if (command == "START") {
+        if (command == "START" || command == "GO") {
             Serial.println("[ACTION] 로봇 재시작");
+            bot.resume();
         } else if (command == "STOP") {
             Serial.println("[ACTION] 로봇 정지");
-        } else if (command == "TOGGLE") {
-            Serial.println("[ACTION] 상태 전환");
-            // 상태 토글 로직을 여기에 추가
-        } else {
+            bot.pause();
+        }else if (command == "TEST") {
+            Serial.println("[ACTION] 작동시작");
+            bot.resume();
+            return;
+            Serial.println("[ACTION] 작동종료");
+        }else {
             Serial.println("[WARNING] 알 수 없는 명령");
         }
     }
-
-    // 라인트레이싱, 기타 업데이트 등 필요시 여기에 추가
-    delay(10);
 }

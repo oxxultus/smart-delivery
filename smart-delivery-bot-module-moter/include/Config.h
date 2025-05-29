@@ -8,8 +8,8 @@
 
 
 // CommLink용 소프트웨어 시리얼 핀 (GND to GND)
-#define COMM_RX_PIN 4
-#define COMM_TX_PIN 5
+#define COMM_RX_PIN 9
+#define COMM_TX_PIN 10
 
 #define BAUD_RATE 9600
 

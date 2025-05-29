@@ -66,6 +66,8 @@ void setServerHandler() {
     // 핸들러 등록
     serverService.setStartHandler([]() {
         Serial.println("[ServerService][GET /start] 로봇 시작 명령 수신");
+        
+        payment.clear();
 
         // 결제 내역이 없으면 수신 시도
         if (payment.getPaymentId() == "") {
@@ -76,9 +78,19 @@ void setServerHandler() {
                 return;
             }
         }
-        // 결제 내역이 이미 존재하거나 새로 수신 성공한 경우
-        Serial.println("[ServerService][START] 결제 내역이 존재함 → 로봇 시작");
-        sendWithRetry("START"); // 함수: [UTILITY-1]
+
+        // 작업 리스트 전송 (GET 방식)
+        String getResponse = ServerService::sendGETRequest(MAIN_SERVER_IP, MAIN_SERVER_PORT, FIRST_SET_WORKING_LISTS);
+        Serial.println("[응답] " + getResponse);
+
+        if (getResponse.indexOf("초기 작업 리스트 생성 완료") == -1 && getResponse.indexOf("200 OK") == -1) {
+            Serial.println("[ServerService][BLOCKED] 작업 리스트 설정 실패 → 로봇 시작 차단됨");
+            return;
+        }
+
+        // 결제 내역도 존재하고, 작업 리스트도 성공적으로 설정된 경우
+        Serial.println("[ServerService][START] 결제 내역 및 작업 리스트 준비 완료 → 로봇 시작");
+        sendWithRetry("START");  // 로봇 시작 명령
     });
     serverService.setGoHandler([]() {
         Serial.println("[ServerService][GET /go] 로봇 이동 명령 수신");
@@ -87,6 +99,24 @@ void setServerHandler() {
     serverService.setStopHandler([]() {
         Serial.println("[ServerService][GET /stop] 로봇 정지 명령 수신");
         sendWithRetry("STOP"); // 함수: [UTILITY-1]
+    });
+    serverService.setResetHandler([]() {
+        Serial.println("[ServerService][GET /reset] 로봇 정지 명령 수신");
+
+        // 결제 내역 초기화
+        payment.clear();
+
+        // 서버에 작업 리스트 초기화 요청
+        String getResponse = ServerService::sendGETRequest(MAIN_SERVER_IP, MAIN_SERVER_PORT, RESET_WORKING_LISTS);
+        Serial.println("[응답] " + getResponse);
+
+        // 응답 메시지 기반 판단
+        if (getResponse.indexOf("초기화했습니다") == -1 && getResponse.indexOf("200 OK") == -1) {
+            Serial.println("[ServerService][BLOCKED] 작업 리스트 초기화 실패 → 로봇 정지 차단됨");
+            return;
+        }
+
+        sendWithRetry("STOP");  // 로봇 정지 명령 전송
     });
 
     Serial.println("[setServerHandler][1/2] 내장 서버 API 실행 함수 등록 확인 절차 시작");
@@ -148,11 +178,23 @@ bool fetchPaymentDataUntilSuccess(const int count) {
 }
 
 // [LOOP-4] 상품 매칭 시 동작을 처리하는 함수
-void handleMatchedProduct(const String& matchedName) {
+void handleMatchedProduct(const String& matchedName, const String& detectedUid) {
     Serial.println("[RFIDController][2/3] 일치하는 상품: " + matchedName + " → 모터 정지 명령 전송");
-    // 함수: [UTILITY-1]
+
     if (sendWithRetry("STOP")) {
         Serial.println("[RFIDController][3/3] STOP 명령 전송 및 ACK 수신 성공");
+
+        // UID를 서버에 전송하여 워킹 리스트에 추가
+        String path = "/bot/add-working-list?uid=" + detectedUid;
+        String response = ServerService::sendGETRequest(MAIN_SERVER_IP, MAIN_SERVER_PORT, path);
+
+        Serial.println("[Server 응답] " + response);
+
+        if (response.indexOf("작업 리스트에 추가") != -1 || response.indexOf("200 OK") != -1) {
+            Serial.println("[RFIDController] 워킹 리스트 추가 성공");
+        } else {
+            Serial.println("[RFIDController] 워킹 리스트 추가 실패");
+        }
     } else {
         Serial.println("[RFIDController][3/3] STOP 명령 전송 실패 (ACK 없음)");
     }
@@ -173,10 +215,21 @@ void checkDetectedUid() {
         return;
     }
 
+    // test 카드로 작동 확인
+    if (detectedUid == TEST_KEY) {
+        if (sendWithRetry("TEST")) {
+            Serial.println("[RFIDController][3/3] TEST 명령 전송 및 ACK 수신 성공");
+            return;
+        } else {
+            Serial.println("[RFIDController][3/3] TEST 명령 전송 실패 (ACK 없음)");
+            return;
+        }
+    }
+
     // 함수 [LOOP-5]
     String matchedName;
     if (payment.matchUID(detectedUid, matchedName)) {
-        handleMatchedProduct(matchedName);
+        handleMatchedProduct(matchedName,detectedUid);
     } else {
         Serial.println("[RFIDController][2/3] 감지된 UID는 결제 내역에 없음 → 무시");
         Serial.println("[RFIDController][3/3] 다음 상품으로 이동 합니다.\n");
@@ -235,4 +288,3 @@ void simpleMessage(String message) {
     return false;
 }
 */
-

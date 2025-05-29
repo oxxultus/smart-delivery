@@ -5,13 +5,13 @@
 // └─────────────────────────────────────────────┘
 
 // WiFi 정보
-#define WIFI_SSID     "Kzz22e [2G]"
-#define WIFI_PASSWORD "kyj@&3127415"
-//#define WIFI_SSID     "iptime"
-//#define WIFI_PASSWORD ""
+// #define WIFI_SSID     "Kzz22e [2G]"
+// #define WIFI_PASSWORD ""
+#define WIFI_SSID     "iptime"
+#define WIFI_PASSWORD ""
 
 // 메인 서버 IP 및 포트
-#define MAIN_SERVER_IP   "221.161.182.186"
+#define MAIN_SERVER_IP   "oxxultus.kro.kr"
 #define MAIN_SERVER_PORT 8080
 
 // 내부 서버 포트 설정
@@ -19,6 +19,9 @@
 
 // 메인 서버 결제내역 API 요청 URL
 #define GET_PAYMENT "/bot/payment"
+
+#define FIRST_SET_WORKING_LISTS "/bot/first-set-working-list"
+#define RESET_WORKING_LISTS "/bot/reset-working-list"
 
 // 시리얼 속도 설정
 #define SERIAL_BAUDRATE 115200
@@ -50,5 +53,7 @@ constexpr const char* ADMIN_UID = "a1b2c3d4";
 
 // 마스터 키 설정
 #define MASTER_KEY "c3a27b28"
+
+#define TEST_KEY "34e0ef03"
 
 #endif
