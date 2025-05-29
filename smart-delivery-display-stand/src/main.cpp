@@ -63,7 +63,6 @@ String sendATWithResponse(String cmd, unsigned long waitTime = 3000) {
 bool connectAndSendRequest(String url, String& responseOut) {
   String request = "GET " + url + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
 
-  // TCP 연결
   String connectCmd = "AT+CIPSTART=\"TCP\",\"" + String(host) + "\"," + String(port);
   String connectResp = sendATWithResponse(connectCmd, 5000);
   if (connectResp.indexOf("OK") == -1 && connectResp.indexOf("ALREADY CONNECTED") == -1) {
@@ -71,7 +70,6 @@ bool connectAndSendRequest(String url, String& responseOut) {
     return false;
   }
 
-  // 요청 길이 전송
   esp.println("AT+CIPSEND=" + String(request.length()));
   unsigned long t = millis();
   bool promptFound = false;
@@ -81,15 +79,13 @@ bool connectAndSendRequest(String url, String& responseOut) {
       break;
     }
   }
+
   if (!promptFound) {
     Serial.println("❌ '>' 수신 실패");
     return false;
   }
 
-  // 요청 전송
   esp.print(request);
-
-  // 응답 수신
   String response = "";
   t = millis();
   while (millis() - t < 5000) {
@@ -105,23 +101,31 @@ bool connectAndSendRequest(String url, String& responseOut) {
 void setup() {
   Serial.begin(9600);
   esp.begin(9600);
-  myStepper.setSpeed(10);  // 10 RPM
+  myStepper.setSpeed(10);
   delay(1000);
 
   Serial.println("ESP-01 초기화...");
   sendAT("AT");
   sendAT("AT+RST", 3000);
   waitForBoot();
-
   sendAT("AT+CWMODE=1");
-  sendAT("AT+CWJAP=\"" + String(ssid) + "\",\"" + String(password) + "\"", 8000);
-  sendAT("AT+CIFSR");
-  Serial.println("✅ WiFi 연결 완료");
+
+  // ✅ WiFi 연결될 때까지 재시도
+  while (true) {
+    sendAT("AT+CWJAP=\"" + String(ssid) + "\",\"" + String(password) + "\"", 8000);
+    String ipResp = sendATWithResponse("AT+CIFSR", 3000);
+    if (ipResp.indexOf("STAIP") != -1 || ipResp.indexOf("192.") != -1) {
+      Serial.println("✅ WiFi 연결 성공");
+      break;
+    }
+    Serial.println("❌ 연결 실패, 재시도 중...");
+    delay(3000);
+  }
 }
 
 void loop() {
-  // 1. 작업 조회 요청
-  Serial.println("[STEP 1] /check/working-list 요청");
+  // [1] 작업 확인
+  Serial.println("[STEP 1] /check/working-list");
   String checkUrl = "/check/working-list?uid=" + uid;
   String response;
   if (!connectAndSendRequest(checkUrl, response)) {
@@ -129,10 +133,7 @@ void loop() {
     return;
   }
 
-  Serial.println("[응답 본문]");
-  Serial.println(response);
-
-  // 2. 응답에서 count 추출
+  // [2] 응답에서 count 파싱
   int jsonStart = response.indexOf('{');
   int jsonEnd = response.lastIndexOf('}');
   if (jsonStart != -1 && jsonEnd != -1) {
@@ -140,13 +141,11 @@ void loop() {
     int colon = body.indexOf(":");
     int end = body.indexOf("}", colon);
     if (colon != -1 && end != -1) {
-      String numStr = body.substring(colon + 1, end);
-      int count = numStr.toInt();
-
+      int count = body.substring(colon + 1, end).toInt();
       Serial.print("▶ 작업 개수: ");
       Serial.println(count);
 
-      // 3. 모터 회전
+      // [3] 모터 동작
       for (int i = 0; i < count; i++) {
         Serial.print("🌀 ");
         Serial.println(i + 1);
@@ -154,11 +153,10 @@ void loop() {
         delay(1000);
       }
 
-      // 4. 작업 완료 요청
-      Serial.println("[STEP 2] /end/working-list 요청");
-      String endUrl = "/end/working-list?uid=" + uid;
+      // [4] 작업 완료 요청
+      Serial.println("[STEP 2] /end/working-list");
       String dummy;
-      connectAndSendRequest(endUrl, dummy);
+      connectAndSendRequest("/end/working-list?uid=" + uid, dummy);
       Serial.println("✅ 완료 요청 전송");
     } else {
       Serial.println("⚠️ count 파싱 실패");
@@ -167,5 +165,5 @@ void loop() {
     Serial.println("⚠️ JSON 응답 파싱 실패");
   }
 
-  delay(15000);
+  delay(15000);  // 다음 루프까지 대기
 }
